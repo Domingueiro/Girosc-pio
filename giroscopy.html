@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bin\u00e1rio \u2014 Simula\u00e7\u00e3o 3D</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #03060f; overflow: hidden; font-family: 'Courier New', monospace; }
+  canvas { display: block; }
+
+  #ui {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    color: #7ecfff;
+    font-size: 12px;
+    line-height: 1.8;
+    text-shadow: 0 0 8px #7ecfff88;
+    pointer-events: none;
+  }
+  #ui .label { color: #ffffff99; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; }
+
+  #controls {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .ctrl-label {
+    color: #ffffff44;
+    font-size: 10px;
+    font-family: 'Courier New', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-align: center;
+  }
+  input[type=range] {
+    -webkit-appearance: none;
+    width: 140px;
+    height: 2px;
+    background: #7ecfff33;
+    outline: none;
+    border-radius: 2px;
+  }
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #7ecfff;
+    cursor: pointer;
+    box-shadow: 0 0 6px #7ecfffaa;
+  }
+
+  #hint {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    color: #ffffff33;
+    font-size: 10px;
+    font-family: 'Courier New', monospace;
+    text-align: right;
+    line-height: 2;
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+<div id="ui">
+  <div class="label">Bin\u00e1rio Girosc\u00f3pico</div>
+  <div>R (esfera) = <span id="v-R">100</span></div>
+  <div>d (dist. pesos) = <span id="v-d">50</span>  [R/2]</div>
+  <div>\u03c9 = <span id="v-w">1.0</span> rad/s</div>
+</div>
+
+<div id="hint">
+  Arrastar \u2192 orbitar c\u00e2mera<br>
+  Scroll \u2192 zoom<br>
+  Linha tracejada = eixo<br>
+  Esfera transl\u00facida = volume R
+</div>
+
+<div id="controls">
+  <div>
+    <div class="ctrl-label">Velocidade</div>
+    <input type="range" id="speed" min="0" max="5" step="0.05" value="1.0">
+  </div>
+  <div>
+    <div class="ctrl-label">Inclin. 
