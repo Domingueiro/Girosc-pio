@@ -3,90 +3,432 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bin\u00e1rio \u2014 Simula\u00e7\u00e3o 3D</title>
+<title>Giroscópio — 4 Vistas</title>
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { background: #03060f; overflow: hidden; font-family: 'Courier New', monospace; }
-  canvas { display: block; }
+  @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Crimson+Pro:ital,wght@0,300;0,400;1,400&display=swap');
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  #ui {
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    color: #7ecfff;
-    font-size: 12px;
-    line-height: 1.8;
-    text-shadow: 0 0 8px #7ecfff88;
-    pointer-events: none;
-  }
-  #ui .label { color: #ffffff99; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 4px; }
+  :root { --bg:#e8dcc8; --card:#f0e6d0; --border:#c8b898; --text:#2a2e3a; --dim:#7a6e5a; }
 
-  #controls {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    gap: 12px;
-    align-items: center;
+  body {
+    background:var(--bg); color:var(--text);
+    font-family:'Space Mono',monospace;
+    min-height:100vh; display:flex; flex-direction:column;
+    align-items:center; padding:16px; gap:14px;
   }
-  .ctrl-label {
-    color: #ffffff44;
-    font-size: 10px;
-    font-family: 'Courier New', monospace;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    text-align: center;
+  body::before {
+    content:''; position:fixed; inset:0;
+    background:
+      radial-gradient(ellipse 70% 50% at 50% 40%, #f5edd8 0%, transparent 70%),
+      repeating-linear-gradient(0deg,transparent,transparent 39px,#d4c8b0 40px),
+      repeating-linear-gradient(90deg,transparent,transparent 39px,#d4c8b0 40px);
+    background-size:auto,40px 40px,40px 40px;
+    pointer-events:none; z-index:0;
   }
-  input[type=range] {
-    -webkit-appearance: none;
-    width: 140px;
-    height: 2px;
-    background: #7ecfff33;
-    outline: none;
-    border-radius: 2px;
+  header { position:relative; z-index:1; text-align:center; }
+  header h1 {
+    font-family:'Crimson Pro',serif; font-weight:300;
+    font-size:clamp(0.9rem,2.5vw,1.25rem);
+    color:#1a1e2a; letter-spacing:0.12em; text-transform:uppercase;
   }
-  input[type=range]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 12px; height: 12px;
-    border-radius: 50%;
-    background: #7ecfff;
-    cursor: pointer;
-    box-shadow: 0 0 6px #7ecfffaa;
-  }
+  header p { font-size:0.54rem; color:var(--dim); margin-top:4px; letter-spacing:0.12em; }
 
-  #hint {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    color: #ffffff33;
-    font-size: 10px;
-    font-family: 'Courier New', monospace;
-    text-align: right;
-    line-height: 2;
-    letter-spacing: 1px;
+  .canvas-wrap {
+    position:relative; z-index:1;
+    width:min(700px,98vw); aspect-ratio:1;
+    background:var(--card); border:1px solid var(--border);
+    border-radius:6px; overflow:hidden;
   }
+  canvas { display:block; width:100%; height:100%; }
+
+  .controls { position:relative; z-index:1; width:min(700px,98vw); display:flex; flex-direction:column; gap:10px; }
+  .btn-row { display:flex; gap:8px; flex-wrap:wrap; }
+  button {
+    font-family:'Space Mono',monospace; font-size:0.58rem; letter-spacing:0.07em;
+    padding:7px 14px; border:1.5px solid var(--border);
+    background:var(--card); color:var(--text); border-radius:3px; cursor:pointer; flex:1;
+    transition:background 0.15s;
+  }
+  button:hover { background:#e0d4be; }
+  button.active { background:#2a2e3a; color:#e8dcc8; border-color:#2a2e3a; }
+  .sliders { display:grid; grid-template-columns:1fr 1fr; gap:8px 16px; }
+  .slider-item label { display:block; font-size:0.52rem; color:var(--dim); letter-spacing:0.09em; margin-bottom:3px; text-transform:uppercase; }
+  .slider-item input[type=range] { width:100%; accent-color:#5a6a8a; }
+  .sv { font-size:0.55rem; color:var(--text); margin-left:5px; }
+  .eq {
+    background:var(--card); border:1px solid var(--border); border-radius:4px;
+    padding:8px 14px; font-size:0.54rem; color:var(--dim); letter-spacing:0.09em; line-height:1.8;
+  }
+  .eq span { color:var(--text); }
+  .eq .hi { color:#c084fc; font-family:'Crimson Pro',serif; font-size:0.72rem; font-style:italic; }
 </style>
 </head>
 <body>
-<div id="ui">
-  <div class="label">Bin\u00e1rio Girosc\u00f3pico</div>
-  <div>R (esfera) = <span id="v-R">100</span></div>
-  <div>d (dist. pesos) = <span id="v-d">50</span>  [R/2]</div>
-  <div>\u03c9 = <span id="v-w">1.0</span> rad/s</div>
-</div>
 
-<div id="hint">
-  Arrastar \u2192 orbitar c\u00e2mera<br>
-  Scroll \u2192 zoom<br>
-  Linha tracejada = eixo<br>
-  Esfera transl\u00facida = volume R
-</div>
+<header>
+  <h1>Giroscópio — Precessão por Binários</h1>
+  <p>ISO 3D · Vista←X (plano YZ) · Vista↓Y (plano XZ) · Vista◉Z (plano XY)</p>
+</header>
 
-<div id="controls">
-  <div>
-    <div class="ctrl-label">Velocidade</div>
-    <input type="range" id="speed" min="0" max="5" step="0.05" value="1.0">
+<div class="canvas-wrap"><canvas id="c" width="700" height="700"></canvas></div>
+
+<div class="controls">
+  <div class="btn-row">
+    <button id="btnSpin" class="active" onclick="toggleSpin()">⟳ Girar volante</button>
+    <button id="btnTorque" onclick="applyTorque()">↺ Aplicar torção</button>
+    <button id="btnReset" onclick="reset()">⟲ Resetar</button>
   </div>
-  <div>
-    <div class="ctrl-label">Inclin. 
+  <div class="sliders">
+    <div class="slider-item">
+      <label>Velocidade spin <span class="sv" id="vS">1.0×</span></label>
+      <input type="range" min="0.2" max="3" step="0.1" value="1"
+        oninput="spinRate=+this.value;document.getElementById('vS').textContent=this.value+'×'">
+    </div>
+    <div class="slider-item">
+      <label>Mom. angular L <span class="sv" id="vL">1.0</span></label>
+      <input type="range" min="0.2" max="3" step="0.1" value="1"
+        oninput="angMom=+this.value;document.getElementById('vL').textContent=this.value">
+    </div>
+    <div class="slider-item">
+      <label>Torque τ <span class="sv" id="vT">0.3</span></label>
+      <input type="range" min="0.05" max="1" step="0.05" value="0.3"
+        oninput="torqueMag=+this.value;document.getElementById('vT').textContent=this.value">
+    </div>
+    <div class="slider-item">
+      <label>Esc. precessão <span class="sv" id="vO">1.0×</span></label>
+      <input type="range" min="0.1" max="2" step="0.1" value="1"
+        oninput="precessScale=+this.value;document.getElementById('vO').textContent=this.value+'×'">
+    </div>
+  </div>
+  <div class="eq">
+    <span>Precessão giroscópica:</span> &nbsp;
+    <span class="hi">dL⃗/dt = τ⃗</span> &nbsp;→&nbsp;
+    <span>Ω = τ / L</span> &nbsp;|&nbsp;
+    <span>L↑ → Ω↓ · mais inércia = mais resistência à torção</span>
+  </div>
+</div>
+
+<script>
+// ── Estado ──────────────────────────────────────────────────────────────────
+let spinAngle=0, precessAngle=0, tiltAngle=0;
+let torqueActive=false, isSpinning=true;
+let spinRate=1, angMom=1, torqueMag=0.3, precessScale=1;
+let lastTime=null;
+
+const cv=document.getElementById('c'), ctx=cv.getContext('2d');
+const W=700, Q=350;  // canvas 700×700, quadrantes 350×350
+
+// ── Cores ────────────────────────────────────────────────────────────────────
+const CX='#e05252', CY='#52c0e0', CZ='#7de052';
+const CSHAFT='#c06080', CL='#3a7abf', CTAU='#c084fc';
+const COMG='#5aaa6a', CMASS='#f0c060', CHASTE='#5a6a8a', CF='#ff8c42';
+const R=0.75, NSPOKES=7;
+
+// ── Estado físico ─────────────────────────────────────────────────────────────
+function getState(){
+  const ex=Math.sin(precessAngle), ey=tiltAngle, ez=Math.cos(precessAngle);
+  const el=Math.hypot(ex,ey,ez);
+  const enx=ex/el, eny=ey/el, enz=ez/el;
+  // u = Y × ê  (Y=0,1,0)
+  let ux=enz, uy=0, uz=-enx;
+  const ul=Math.hypot(ux,uy,uz);
+  if(ul>0.001){ux/=ul;uy/=ul;uz/=ul;}else{ux=1;uy=0;uz=0;}
+  // v = ê × u
+  const vx=eny*uz-enz*uy, vy=enz*ux-enx*uz, vz=enx*uy-eny*ux;
+  return {ex,ey,ez,ux,uy,uz,vx,vy,vz};
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function arr(x1,y1,x2,y2,col,lw=2,hl=9){
+  const dx=x2-x1,dy=y2-y1,l=Math.hypot(dx,dy); if(l<2)return;
+  const nx=dx/l,ny=dy/l;
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
+  ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-hl*(nx-ny*0.4),y2-hl*(ny+nx*0.4));
+  ctx.lineTo(x2-hl*(nx+ny*0.4),y2-hl*(ny-nx*0.4));
+  ctx.closePath();ctx.fillStyle=col;ctx.fill();
+}
+function dline(x1,y1,x2,y2,col,lw=1.2,dash=[5,4]){
+  ctx.save();ctx.setLineDash(dash);
+  ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);
+  ctx.strokeStyle=col;ctx.lineWidth=lw;ctx.stroke();ctx.restore();
+}
+function txt(t,x,y,col,sz=9,bold=false){
+  ctx.font=`${bold?'bold ':''}${sz}px 'Space Mono'`;ctx.fillStyle=col;ctx.fillText(t,x,y);
+}
+function itxt(t,x,y,col,sz=12){
+  ctx.font=`italic ${sz}px 'Crimson Pro'`;ctx.fillStyle=col;ctx.fillText(t,x,y);
+}
+function grid(x0,y0){
+  ctx.save();ctx.strokeStyle='#d0c4ae';ctx.lineWidth=0.5;
+  const s=Q/6;
+  for(let i=0;i<=6;i++){
+    ctx.beginPath();ctx.moveTo(x0+i*s,y0);ctx.lineTo(x0+i*s,y0+Q);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(x0,y0+i*s);ctx.lineTo(x0+Q,y0+i*s);ctx.stroke();
+  }
+  ctx.restore();
+}
+function qtitle(t,dx,dy){
+  ctx.font="bold 8px 'Space Mono'";ctx.fillStyle='#7a6e5a';ctx.fillText(t,dx+8,dy+14);
+}
+
+// ── Projeções ortogonais ──────────────────────────────────────────────────────
+// Cada projector recebe coordenadas mundo (wx,wy,wz) e devolve pixel relativo ao centro do quadrante
+function pISO(wx,wy,wz,S,cx,cy){return[cx+S*(0.866*wx-0.866*wz), cy+S*(0.25*wx-wy+0.25*wz)];}
+// Vista de X: horizontal=−Z, vertical=Y
+function pX(wx,wy,wz,S,cx,cy){return[cx-S*wz, cy-S*wy];}
+// Vista de Y: horizontal=X, vertical=−Z (Z sobe)
+function pY(wx,wy,wz,S,cx,cy){return[cx+S*wx, cy-S*wz];}
+// Vista de Z: horizontal=X, vertical=Y
+function pZ(wx,wy,wz,S,cx,cy){return[cx+S*wx, cy-S*wy];}
+
+// ── Conteúdo comum para as 3 vistas ortogonais ────────────────────────────────
+function drawOrtho(proj,S,cx,cy,st,cfg){
+  const {ex,ey,ez,ux,uy,uz,vx,vy,vz}=st;
+  const p=(x,y,z)=>proj(x,y,z,S,cx,cy);
+  const O=p(0,0,0);
+
+  // Cruzeta de eixos — horizontal, vertical, profundidade
+  const {aH,aV,aD,cH,cV,cD}=cfg;
+  // horizontal
+  {const P=p(...aH[0]),N=p(...aH[1]);dline(N[0],N[1],O[0],O[1],cH,1.2);arr(O[0],O[1],P[0],P[1],cH,2,8);txt(cfg.lH,P[0]+3,P[1]+4,cH,10,true);}
+  // vertical
+  {const P=p(...aV[0]),N=p(...aV[1]);dline(N[0],N[1],O[0],O[1],cV,1.2);arr(O[0],O[1],P[0],P[1],cV,2,8);txt(cfg.lV,P[0]-12,P[1]-4,cV,10,true);}
+  // profundidade (círculo ou ponto)
+  {const P=p(...aD[0]),N=p(...aD[1]);dline(N[0],N[1],O[0],O[1],cD,1,[3,4]);arr(O[0],O[1],P[0],P[1],cD,1.5,7);txt(cfg.lD,P[0]+3,P[1]+4,cD,10,true);}
+
+  // Eixo de sustentação ê
+  const es=1.05;
+  const Ep=p(ex*es,ey*es,ez*es),En=p(-ex*es,-ey*es,-ez*es);
+  dline(En[0],En[1],O[0],O[1],CSHAFT,1.3);arr(O[0],O[1],Ep[0],Ep[1],CSHAFT,2.5,9);
+
+  // Trilha do volante
+  const nT=64;ctx.beginPath();
+  for(let i=0;i<=nT;i++){
+    const a=(i/nT)*Math.PI*2;
+    const mx=ux*Math.cos(a)+vx*Math.sin(a),my=uy*Math.cos(a)+vy*Math.sin(a),mz=uz*Math.cos(a)+vz*Math.sin(a);
+    const [px,py]=p(mx*R,my*R,mz*R);
+    i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+  }
+  ctx.closePath();
+  ctx.strokeStyle=torqueActive?'rgba(90,160,100,0.6)':'rgba(60,120,190,0.4)';
+  ctx.lineWidth=1.5;ctx.setLineDash(torqueActive?[]:[4,3]);ctx.stroke();ctx.setLineDash([]);
+
+  // Hastes
+  for(let k=0;k<NSPOKES;k++){
+    const a=spinAngle+k*(Math.PI/NSPOKES);
+    const mx=ux*Math.cos(a)+vx*Math.sin(a),my=uy*Math.cos(a)+vy*Math.sin(a),mz=uz*Math.cos(a)+vz*Math.sin(a);
+    const m1=p(mx*R,my*R,mz*R),m2=p(-mx*R,-my*R,-mz*R);
+    ctx.globalAlpha=0.18;ctx.beginPath();ctx.moveTo(m1[0],m1[1]);ctx.lineTo(m2[0],m2[1]);
+    ctx.strokeStyle=CHASTE;ctx.lineWidth=1.5;ctx.stroke();ctx.globalAlpha=1;
+  }
+
+  // Binário principal
+  {
+    const a=spinAngle;
+    const mx=ux*Math.cos(a)+vx*Math.sin(a),my=uy*Math.cos(a)+vy*Math.sin(a),mz=uz*Math.cos(a)+vz*Math.sin(a);
+    const m1=p(mx*R,my*R,mz*R),m2=p(-mx*R,-my*R,-mz*R);
+    ctx.beginPath();ctx.moveTo(m1[0],m1[1]);ctx.lineTo(m2[0],m2[1]);
+    ctx.strokeStyle=CHASTE;ctx.lineWidth=2.5;ctx.stroke();
+    const fx=-vx*Math.cos(a)+ux*Math.sin(a),fy=-vy*Math.cos(a)+uy*Math.sin(a),fz=-vz*Math.cos(a)+uz*Math.sin(a);
+    const fs=0.38;
+    arr(...p(mx*R,my*R,mz*R),...p((mx+fx*fs)*R,(my+fy*fs)*R,(mz+fz*fs)*R),CF,1.8,7);
+    arr(...p(-mx*R,-my*R,-mz*R),...p((-mx-fx*fs)*R,(-my-fy*fs)*R,(-mz-fz*fs)*R),CF,1.8,7);
+    [m1,m2].forEach(([px,py])=>{
+      ctx.beginPath();ctx.arc(px,py,10,0,Math.PI*2);ctx.fillStyle='rgba(240,192,96,0.28)';ctx.fill();
+      ctx.beginPath();ctx.arc(px,py,5.5,0,Math.PI*2);
+      ctx.fillStyle='#7a5a10';ctx.strokeStyle=CMASS;ctx.lineWidth=1.8;ctx.fill();ctx.stroke();
+    });
+  }
+
+  // L⃗
+  const ls=0.58*angMom;const Lp=p(ex*ls,ey*ls,ez*ls);
+  arr(O[0],O[1],Lp[0],Lp[1],CL,2.5,10);itxt('L⃗',Lp[0]+4,Lp[1]-4,CL,11);
+
+  // τ⃗
+  if(torqueActive){
+    const ts=torqueMag;
+    const Tp=p(Math.cos(precessAngle)*ts,0,-Math.sin(precessAngle)*ts);
+    arr(O[0],O[1],Tp[0],Tp[1],CTAU,2,8);itxt('τ⃗',Tp[0]+4,Tp[1]-3,CTAU,11);
+  }
+
+  // Ω⃗
+  if(torqueActive||precessAngle>0.02){
+    const os=Math.min(torqueMag/(angMom+0.001)*precessScale*0.55,0.8);
+    const Ob=p(0,1.0,0),Op=p(0,1.0+os,0);
+    arr(Ob[0],Ob[1],Op[0],Op[1],COMG,2,8);itxt('Ω⃗',Op[0]+4,Op[1]-3,COMG,11);
+  }
+
+  // Articulação
+  ctx.beginPath();ctx.arc(O[0],O[1],5,0,Math.PI*2);
+  ctx.fillStyle='#d8c8a8';ctx.strokeStyle='#8a7a5a';ctx.lineWidth=1.5;ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.arc(O[0],O[1],2,0,Math.PI*2);ctx.fillStyle='#6a5a4a';ctx.fill();
+}
+
+// ── Vista Isométrica ───────────────────────────────────────────────────────────
+function drawISO(st){
+  const S=88,cx=Q/2,cy=Q/2+12;
+  const {ex,ey,ez,ux,uy,uz,vx,vy,vz}=st;
+  const p=(x,y,z)=>pISO(x,y,z,S,cx,cy);
+  const O=p(0,0,0);
+
+  // Plano XZ tênue
+  {const v=[[1,0,1],[-1,0,1],[-1,0,-1],[1,0,-1]].map(([x,y,z])=>p(x,y,z));
+  ctx.beginPath();ctx.moveTo(v[0][0],v[0][1]);v.forEach(([x,y])=>ctx.lineTo(x,y));ctx.closePath();
+  ctx.fillStyle='rgba(90,170,110,0.09)';ctx.fill();
+  ctx.strokeStyle='rgba(80,150,90,0.3)';ctx.lineWidth=0.8;ctx.setLineDash([4,4]);ctx.stroke();ctx.setLineDash([]);}
+
+  // Plano XY tênue
+  {const v=[[1,1,0],[-1,1,0],[-1,-1,0],[1,-1,0]].map(([x,y,z])=>p(x,y,z));
+  ctx.beginPath();ctx.moveTo(v[0][0],v[0][1]);v.forEach(([x,y])=>ctx.lineTo(x,y));ctx.closePath();
+  ctx.fillStyle='rgba(60,120,190,0.06)';ctx.fill();
+  ctx.strokeStyle='rgba(60,120,190,0.2)';ctx.lineWidth=0.8;ctx.setLineDash([3,5]);ctx.stroke();ctx.setLineDash([]);}
+
+  // Eixos
+  [[1.2,0,0,-.5,0,0,CX,'X',6,-2],[0,1.3,0,0,-.5,0,CY,'Y',-8,-7],[0,0,1.2,0,0,-.5,CZ,'Z',-18,4]].forEach(([px,py,pz,nx,ny,nz,c,l,dx,dy])=>{
+    const P=p(px,py,pz),N=p(nx,ny,nz);
+    dline(N[0],N[1],O[0],O[1],c,1.3);arr(O[0],O[1],P[0],P[1],c,2.2,8);
+    txt(l,P[0]+dx,P[1]+dy,c,11,true);
+  });
+
+  // Eixo de sustentação
+  const es=1.05;
+  const Ep=p(ex*es,ey*es,ez*es),En=p(-ex*es,-ey*es,-ez*es);
+  dline(En[0],En[1],O[0],O[1],CSHAFT,1.5);arr(O[0],O[1],Ep[0],Ep[1],CSHAFT,2.8,10);
+  txt('ê',Ep[0]+4,Ep[1]+3,CSHAFT,10,true);
+
+  // Trilha
+  const nT=72;ctx.beginPath();
+  for(let i=0;i<=nT;i++){
+    const a=(i/nT)*Math.PI*2;
+    const mx=ux*Math.cos(a)+vx*Math.sin(a),my=uy*Math.cos(a)+vy*Math.sin(a),mz=uz*Math.cos(a)+vz*Math.sin(a);
+    const[px,py]=p(mx*R,my*R,mz*R);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+  }
+  ctx.closePath();ctx.strokeStyle=torqueActive?'rgba(90,160,100,0.65)':'rgba(60,120,190,0.4)';
+  ctx.lineWidth=1.5;ctx.setLineDash(torqueActive?[]:[4,3]);ctx.stroke();ctx.setLineDash([]);
+
+  // Hastes
+  for(let k=0;k<NSPOKES;k++){
+    const a=spinAngle+k*(Math.PI/NSPOKES);
+    const mx=ux*Math.cos(a)+vx*Math.sin(a),my=uy*Math.cos(a)+vy*Math.sin(a),mz=uz*Math.cos(a)+vz*Math.sin(a);
+    const m1=p(mx*R,my*R,mz*R),m2=p(-mx*R,-my*R,-mz*R);
+    ctx.globalAlpha=0.2;ctx.beginPath();ctx.moveTo(m1[0],m1[1]);ctx.lineTo(m2[0],m2[1]);
+    ctx.strokeStyle=CHASTE;ctx.lineWidth=1.5;ctx.stroke();ctx.globalAlpha=1;
+  }
+
+  // Binário principal
+  {
+    const a=spinAngle;
+    const mx=ux*Math.cos(a)+vx*Math.sin(a),my=uy*Math.cos(a)+vy*Math.sin(a),mz=uz*Math.cos(a)+vz*Math.sin(a);
+    const m1=p(mx*R,my*R,mz*R),m2=p(-mx*R,-my*R,-mz*R);
+    ctx.beginPath();ctx.moveTo(m1[0],m1[1]);ctx.lineTo(m2[0],m2[1]);ctx.strokeStyle=CHASTE;ctx.lineWidth=3;ctx.stroke();
+    const fx=-vx*Math.cos(a)+ux*Math.sin(a),fy=-vy*Math.cos(a)+uy*Math.sin(a),fz=-vz*Math.cos(a)+uz*Math.sin(a);
+    const fs=0.42;
+    arr(...p(mx*R,my*R,mz*R),...p((mx+fx*fs)*R,(my+fy*fs)*R,(mz+fz*fs)*R),CF,2,8);
+    arr(...p(-mx*R,-my*R,-mz*R),...p((-mx-fx*fs)*R,(-my-fy*fs)*R,(-mz-fz*fs)*R),CF,2,8);
+    [m1,m2].forEach(([px,py])=>{
+      ctx.beginPath();ctx.arc(px,py,12,0,Math.PI*2);ctx.fillStyle='rgba(240,192,96,0.3)';ctx.fill();
+      ctx.beginPath();ctx.arc(px,py,6.5,0,Math.PI*2);ctx.fillStyle='#7a5a10';ctx.strokeStyle=CMASS;ctx.lineWidth=2;ctx.fill();ctx.stroke();
+    });
+  }
+
+  // L⃗
+  const ls=0.62*angMom,Lp=p(ex*ls,ey*ls,ez*ls);
+  arr(O[0],O[1],Lp[0],Lp[1],CL,2.8,11);itxt('L⃗',Lp[0]+5,Lp[1]-5,CL,13);
+
+  // τ⃗
+  if(torqueActive){
+    const ts=torqueMag*1.0,Tp=p(Math.cos(precessAngle)*ts,0,-Math.sin(precessAngle)*ts);
+    arr(O[0],O[1],Tp[0],Tp[1],CTAU,2.2,9);itxt('τ⃗',Tp[0]+4,Tp[1]-4,CTAU,13);
+  }
+
+  // Ω⃗
+  if(torqueActive||precessAngle>0.02){
+    const os=Math.min(torqueMag/(angMom+0.001)*precessScale*0.6,0.85);
+    const Ob=p(0,1.05,0),Op=p(0,1.05+os,0);
+    arr(Ob[0],Ob[1],Op[0],Op[1],COMG,2.2,9);itxt('Ω⃗',Op[0]+4,Op[1]-4,COMG,13);
+  }
+
+  // Arco precessão
+  if(precessAngle>0.03){
+    const ar=0.42;ctx.beginPath();
+    for(let i=0;i<=40;i++){const a=(i/40)*precessAngle;const[px,py]=p(Math.sin(a)*ar,0,Math.cos(a)*ar);i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);}
+    ctx.strokeStyle='rgba(90,170,106,0.7)';ctx.lineWidth=1.5;ctx.setLineDash([3,3]);ctx.stroke();ctx.setLineDash([]);
+  }
+
+  // Articulação
+  ctx.beginPath();ctx.arc(O[0],O[1],6,0,Math.PI*2);
+  ctx.fillStyle='#d8c8a8';ctx.strokeStyle='#8a7a5a';ctx.lineWidth=1.5;ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.arc(O[0],O[1],2.5,0,Math.PI*2);ctx.fillStyle='#6a5a4a';ctx.fill();
+
+  // HUD
+  txt(`prec ${(precessAngle*180/Math.PI).toFixed(1)}°  tilt ${(tiltAngle*180/Math.PI).toFixed(2)}°`,8,Q-8,'#7a6e5a',7.5);
+}
+
+// ── Frame ─────────────────────────────────────────────────────────────────────
+function frame(ts){
+  if(!lastTime)lastTime=ts;
+  const dt=Math.min((ts-lastTime)/1000,0.05);lastTime=ts;
+  if(isSpinning)spinAngle+=spinRate*2.0*dt;
+  if(torqueActive){
+    precessAngle+=(torqueMag/(angMom+0.001))*precessScale*dt;
+    const mt=torqueMag/(angMom*2+0.5);
+    tiltAngle+=(mt-tiltAngle)*dt*1.5;
+  }else{tiltAngle+=(0-tiltAngle)*dt*2;}
+  draw();requestAnimationFrame(frame);
+}
+
+function draw(){
+  ctx.clearRect(0,0,W,W);
+  const st=getState();
+
+  // Fundos
+  [[0,0,'#f5edd8'],[Q,0,'#f2e9d0'],[0,Q,'#f0e6cc'],[Q,Q,'#eee4ca']].forEach(([x,y,c])=>{ctx.fillStyle=c;ctx.fillRect(x,y,Q,Q);grid(x,y);});
+
+  // Q1 ISO (sup-esq)
+  ctx.save();ctx.beginPath();ctx.rect(0,0,Q,Q);ctx.clip();
+  drawISO(st);qtitle('ISO 3D',0,0);ctx.restore();
+
+  // Q2 Vista←X (sup-dir): proj pX, H=Z(−), V=Y
+  ctx.save();ctx.beginPath();ctx.rect(Q,0,Q,Q);ctx.clip();ctx.translate(Q,0);
+  drawOrtho(pX,90,Q/2,Q/2+10,st,{
+    aH:[[0,0,-1.2],[0,0,0.55]],aV:[[0,1.2,0],[0,-0.55,0]],aD:[[1.2,0,0],[-0.55,0,0]],
+    cH:CZ,cV:CY,cD:CX,lH:'Z',lV:'Y',lD:'X'
+  });
+  qtitle('VISTA ← X  (plano YZ)',0,0);ctx.restore();
+
+  // Q3 Vista↓Y (inf-esq): proj pY, H=X, V=Z(−)
+  ctx.save();ctx.beginPath();ctx.rect(0,Q,Q,Q);ctx.clip();ctx.translate(0,Q);
+  drawOrtho(pY,90,Q/2,Q/2+10,st,{
+    aH:[[1.2,0,0],[-0.55,0,0]],aV:[[0,0,-1.2],[0,0,0.55]],aD:[[0,1.2,0],[0,-0.55,0]],
+    cH:CX,cV:CZ,cD:CY,lH:'X',lV:'Z',lD:'Y'
+  });
+  qtitle('VISTA ↓ Y  (plano XZ)',0,0);ctx.restore();
+
+  // Q4 Vista◉Z (inf-dir): proj pZ, H=X, V=Y
+  ctx.save();ctx.beginPath();ctx.rect(Q,Q,Q,Q);ctx.clip();ctx.translate(Q,Q);
+  drawOrtho(pZ,90,Q/2,Q/2+10,st,{
+    aH:[[1.2,0,0],[-0.55,0,0]],aV:[[0,1.2,0],[0,-0.55,0]],aD:[[0,0,1.2],[0,0,-0.55]],
+    cH:CX,cV:CY,cD:CZ,lH:'X',lV:'Y',lD:'Z'
+  });
+  qtitle('VISTA ◉ Z  (plano XY)',0,0);ctx.restore();
+
+  // Divisores
+  ctx.strokeStyle='#a89878';ctx.lineWidth=1.5;
+  ctx.beginPath();ctx.moveTo(0,Q);ctx.lineTo(W,Q);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(Q,0);ctx.lineTo(Q,W);ctx.stroke();
+  // Cruz central
+  ctx.beginPath();ctx.arc(Q,Q,5,0,Math.PI*2);ctx.fillStyle='#a89878';ctx.fill();
+}
+
+// ── Controles ────────────────────────────────────────────────────────────────
+function toggleSpin(){isSpinning=!isSpinning;document.getElementById('btnSpin').classList.toggle('active',isSpinning);}
+function applyTorque(){torqueActive=!torqueActive;document.getElementById('btnTorque').classList.toggle('active',torqueActive);}
+function reset(){spinAngle=precessAngle=tiltAngle=0;torqueActive=false;isSpinning=true;document.getElementById('btnSpin').classList.add('active');document.getElementById('btnTorque').classList.remove('active');}
+
+requestAnimationFrame(frame);
+</script>
+</body>
+</html>
